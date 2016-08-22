@@ -1,0 +1,3 @@
+#define EXIT_FAIL -1
+#define EXIT_FAILURE EXIT_FAIL
+#define EXIT_NORMAL 0x0f
