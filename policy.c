@@ -1,0 +1,21 @@
+//
+// Created by ayelet on 8/23/16.
+//
+
+#include "types.h"
+#include "stat.h"
+#include "user.h"
+
+int
+main(int argc, char **argv)
+{
+
+
+    if(argc != 2){
+        printf(2, "usage: policy id...\n");
+        exit(0);
+    }
+
+    schedp(atoi(argv[1]));
+    exit(0);
+}

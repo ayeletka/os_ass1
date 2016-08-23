@@ -43,6 +43,18 @@ sys_kill(void)
   return kill(pid);
 }
 
+//+++
+int
+sys_schedp(void)
+{
+  int policy_id;
+
+  if(argint(0, &policy_id) < 0)
+    return -1;
+  return schedp(policy_id);
+}
+
+
 int
 sys_getpid(void)
 {

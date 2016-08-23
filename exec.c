@@ -56,13 +56,13 @@ exec(char *path, char **argv)
   ip = 0;
 
 
-
-    uint startOfMustExit = sz;
-    int diffAddr =(int)(exit_end - exit_start);
-    if(copyout(pgdir, sz, exit_start, diffAddr) < 0)
-       goto bad;
-    	sz-=diffAddr;
-    	 ustack[0]=startOfMustExit;
+//
+//    uint startOfMustExit = sz;
+//    int diffAddr =(int)(exit_end - exit_start);
+//    if(copyout(pgdir, sz, exit_start, diffAddr) < 0)
+//       goto bad;
+//    	sz-=diffAddr;
+//    	 ustack[0]=startOfMustExit;
 
   // Allocate two pages at the next page boundary.
   // Make the first inaccessible.  Use the second as the user stack.

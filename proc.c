@@ -6,6 +6,10 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "stdlib.h"
+#include "assert.h"
+#include "stdio.h"
+#include <time.h>
 
 struct {
   struct spinlock lock;
@@ -268,6 +272,23 @@ wait(int* status)
   }
 }
 
+
+uint randomFunc (int n)
+{
+    static uint z1 = 12345, z2 = 12345, z3 = 12345, z4 = 12345;
+    uint b;
+    b  = ((z1 << 6) ^ z1) >> 13;
+    z1 = ((z1 & 4294967294U) << 18) ^ b;
+    b  = ((z2 << 2) ^ z2) >> 27;
+    z2 = ((z2 & 4294967288U) << 2) ^ b;
+    b  = ((z3 << 13) ^ z3) >> 21;
+    z3 = ((z3 & 4294967280U) << 7) ^ b;
+    b  = ((z4 << 3) ^ z4) >> 12;
+    z4 = ((z4 & 4294967168U) << 13) ^ b;
+    return (z1 ^ z2 ^ z3 ^ z4)%n;
+}
+
+
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -279,6 +300,7 @@ wait(int* status)
 void
 scheduler(void)
 {
+    uint randomProc;
   struct proc *p;
 
   for(;;){
@@ -287,9 +309,14 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+      randomProc:  randomProc = randomFunc(100);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
+      if(randomProc < p->ntickets) {
+          if (p->state != RUNNABLE) {
+              goto randomProc;
+          }
+      }
+      else continue;
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
@@ -308,6 +335,7 @@ scheduler(void)
 
   }
 }
+
 
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state.
@@ -440,6 +468,13 @@ kill(int pid)
   }
   release(&ptable.lock);
   return -1;
+}
+
+//+++
+int schedp(int policy_id){
+  cprintf("the policy is: %d\n",policy_id);
+    return 0;
+
 }
 
 //PAGEBREAK: 36
