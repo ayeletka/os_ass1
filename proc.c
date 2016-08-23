@@ -24,6 +24,9 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+int ticketCount = 1;
+int currentPolicy = 1;
+
 void
 pinit(void)
 {
@@ -38,6 +41,7 @@ pinit(void)
 static struct proc*
 allocproc(void)
 {
+
   struct proc *p;
   char *sp;
 
@@ -51,6 +55,10 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+
+      ticketCount = (p->pid + 1) * 10;
+      p->ntickets = ticketCount;
+      cprintf("tickets count from allocproc: %d\n", ticketCount);
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -82,6 +90,7 @@ found:
 void
 userinit(void)
 {
+
   struct proc *p;
   extern char _binary_initcode_start[], _binary_initcode_size[];
   
@@ -100,8 +109,21 @@ userinit(void)
   p->tf->esp = PGSIZE;
   p->tf->eip = 0;  // beginning of initcode.S
 
+
+
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
+
+  cprintf("Hello!***********************************************************************************************************");
+
+    // ---------------------------------------
+  //Init gets tickets:
+      ticketCount = (p->pid + 1) * 10;
+      p->ntickets = ticketCount;
+      cprintf("tickets count from userinit: %d\n", ticketCount);
+  //----------------------------------------
+
+  
 
   p->state = RUNNABLE;
 }
@@ -162,8 +184,21 @@ fork(void)
  
   pid = np->pid;
 
+
+  
+
   // lock to force the compiler to emit the np->state write last.
   acquire(&ptable.lock);
+        // ---------------------------------------
+      if(currentPolicy == 1){//Uniform distribution
+
+      ticketCount = (np->pid + 1) * 10;
+      np->ntickets = ticketCount;
+
+      cprintf("tickets count from fork: %d\n", ticketCount);
+    }
+  //----------------------------------------
+
   np->state = RUNNABLE;
   release(&ptable.lock);
   
@@ -300,7 +335,6 @@ uint randomFunc (int n)
 void
 scheduler(void)
 {
-    uint randomProc;
   struct proc *p;
 
   for(;;){
@@ -309,15 +343,25 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-      randomProc:  randomProc = randomFunc(100);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(randomProc < p->ntickets) {
-          if (p->state != RUNNABLE) {
-              goto randomProc;
-          }
-      }
-      else continue;
 
+   // randomProc:
+
+     uint chosenTicket = randomFunc(ticketCount);
+    //         cprintf("Ticket count: %d\n", ticketCount);
+
+    //  cprintf("Chosen Ticket: %d\n", chosenTicket);
+      int ticketCounter = 0;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      ticketCounter = ticketCounter + p->ntickets;
+      //if(chosenTicket < ticketCounter) {
+          if (p->state == RUNNABLE && chosenTicket < ticketCounter) {
+             // goto randomProc;
+            goto found2;
+          }
+          else{
+            continue;
+          }
+      found2:
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
